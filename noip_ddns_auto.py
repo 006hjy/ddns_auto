@@ -16,7 +16,7 @@ hostname = "yourhostname.ddns.net"
 username = "yourusername"
 password = "yourpassword"
 UPLOAD_AT_STARTUP = False  # 是否在启动时上传当前IPv6地址
-useragent = "Xiaomi AX9000/2.23.0.4.388_194-d4aw5e@xiaomi.com"
+useragent = "ASUS TUF-AX5400/3.0.0.4.388_22525-gd35b8fe@asus.com"
 scandelay = 120  # 秒
 retrydelay = 5  # 秒
 recordedIPv6Address = ""
@@ -30,6 +30,7 @@ def getIPv6Address():
 
 async def uploadIPv6Address(ipv6address):
     url = "http://{}:{}@dynupdate.no-ip.com/nic/update".format(username, password)
+    # url = "http://www.google.com"
     headers = {
         "User-Agent": useragent
     }
@@ -39,7 +40,7 @@ async def uploadIPv6Address(ipv6address):
     }
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params, timeout=10) as response:
+            async with session.get(url, headers=headers, params=params) as response:
                 r = await response.text()
                 print(r)
                 if ("good" in r):
@@ -70,10 +71,8 @@ async def uploadIPv6UntilSuccess():  # 记录值与当前值不同时，才会�
                 break
             elif (state == 2):
                 print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传失败,{}秒后重试".format(retrydelay))
-                recordedIPv6Address = currentIPv6Address
             elif (state == 3):
                 print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":网络连接失败,{}秒后重试".format(retrydelay))
-                recordedIPv6Address = currentIPv6Address
             time.sleep(retrydelay)
         else:
             break
@@ -88,7 +87,7 @@ async def main():
             await uploadIPv6UntilSuccess()
         else:
             print("\r" + " " * 50 + "\r", end="", flush=True)  # 清空当前行
-            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":IPv6地址未变化", end="\r")
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":IPv6地址未变化:"+recordedIPv6Address, end="\r")
         time.sleep(scandelay)
 
 if __name__ == "__main__":

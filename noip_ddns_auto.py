@@ -17,8 +17,9 @@ username = "yourusername"
 password = "yourpassword"
 UPLOAD_AT_STARTUP = False  # 是否在启动时上传当前IPv6地址
 useragent = "Xiaomi AX9000/2.23.0.4.388_194-d4aw5e@xiaomi.com"
-delay = 120  # 秒
-currentIPv6Address = ""
+scandelay = 120  # 秒
+retrydelay = 5  # 秒
+recordedIPv6Address = ""
 
 
 def getIPv6Address():
@@ -36,42 +37,59 @@ async def uploadIPv6Address(ipv6address):
         "hostname": hostname,
         "myipv6": ipv6address,
     }
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers, params=params) as response:
-            return await response.text()
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=params, timeout=10) as response:
+                r = await response.text()
+                print(r)
+                if ("good" in r):
+                    return 0
+                if ("nochg" in r):
+                    return 1
+                else:
+                    return 2
+    except Exception as e:
+        print(f"Error retrieving text from {url}: {e}")
+        return 3
 
 
-def InterpretResponse(response):
-    if ("good" in response):
-        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传成功")
-        return 0
-    if ("nochg" in response):
-        print(print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":重复上传!IP地址与上次相同"))
-        return 1
-    else:
-        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传失败")
-    return 2
-
-
-async def checkIPv6Address():
-    global currentIPv6Address
-    currentIPv6Address = getIPv6Address()
-    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":当前IPv6:\n" + getIPv6Address())
-    if (UPLOAD_AT_STARTUP):
-        response = await uploadIPv6Address(currentIPv6Address)
-        print(response)
+async def uploadIPv6UntilSuccess():  # 记录值与当前值不同时，才会上传，直到上传成功。
+    global recordedIPv6Address
     while True:
-        newIPv6Address = getIPv6Address()
-        if currentIPv6Address != newIPv6Address:
-            response = await uploadIPv6Address(currentIPv6Address)
-            print(response)
-            if (InterpretResponse(response) != 2):
-                currentIPv6Address = newIPv6Address
+        currentIPv6Address = getIPv6Address()
+        if (recordedIPv6Address != currentIPv6Address):
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":当前IPv6:" + currentIPv6Address)
+            state = await uploadIPv6Address(currentIPv6Address)
+            if (state == 0):
+                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传成功")
+                recordedIPv6Address = currentIPv6Address
+                break
+            elif (state == 1):
+                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":重复上传!IP地址与上次相同")
+                recordedIPv6Address = currentIPv6Address
+                break
+            elif (state == 2):
+                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传失败,{}秒后重试".format(retrydelay))
+                recordedIPv6Address = currentIPv6Address
+            elif (state == 3):
+                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":网络连接失败,{}秒后重试".format(retrydelay))
+                recordedIPv6Address = currentIPv6Address
+            time.sleep(retrydelay)
         else:
-            # 清空当前行
-            print("\r" + " " * 50 + "\r", end="", flush=True)
+            break
+
+
+async def main():
+    global recordedIPv6Address
+    if (UPLOAD_AT_STARTUP == False):
+        recordedIPv6Address = getIPv6Address()  # 开始时记录值与当前值相同，uploadIPv6UntilSuccess()不上传
+    while True:
+        if recordedIPv6Address != getIPv6Address():
+            await uploadIPv6UntilSuccess()
+        else:
+            print("\r" + " " * 50 + "\r", end="", flush=True)  # 清空当前行
             print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":IPv6地址未变化", end="\r")
-        time.sleep(delay)
+        time.sleep(scandelay)
 
 if __name__ == "__main__":
-    asyncio.run(checkIPv6Address())
+    asyncio.run(main())

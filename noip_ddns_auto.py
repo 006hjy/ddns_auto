@@ -9,17 +9,16 @@ import os
 import re
 import asyncio
 import aiohttp
+import socket
 import time
 from datetime import datetime
 
 hostname = "yourhostname.ddns.net"
 username = "yourusername"
 password = "yourpassword"
-UPLOAD_AT_STARTUP = False  # 是否在启动时上传当前IPv6地址
 useragent = "Xiaomi AX9000/2.23_66039-td84as@mi.com"
 scandelay = 120  # 秒
 retrydelay = 5  # 秒
-recordedIPv6Address = ""
 
 
 def getIPv6Address():
@@ -35,7 +34,7 @@ async def uploadIPv6Address(ipv6address):
         "User-Agent": useragent
     }
     params = {
-        "hostname": hostname,
+        "hostname": domain_name,
         "myipv6": ipv6address,
     }
     try:
@@ -54,20 +53,20 @@ async def uploadIPv6Address(ipv6address):
         return 3
 
 
-async def uploadIPv6UntilSuccess():  # 记录值与当前值不同时，才会上传，直到上传成功。
-    global recordedIPv6Address
+async def uploadIPv6UntilSuccess(ipv6address):  # 记录值与当前值不同时，才会上传，直到上传成功。
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "正在上传本机IPv6地址", end="\r")
     while True:
         currentIPv6Address = getIPv6Address()
-        if (recordedIPv6Address != currentIPv6Address):
+        if (ipv6address != currentIPv6Address):
             print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":当前IPv6:" + currentIPv6Address)
             state = await uploadIPv6Address(currentIPv6Address)
             if (state == 0):
                 print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传成功")
-                recordedIPv6Address = currentIPv6Address
+                ipv6address = currentIPv6Address
                 break
             elif (state == 1):
                 print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":重复上传!IP地址与上次相同")
-                recordedIPv6Address = currentIPv6Address
+                ipv6address = currentIPv6Address
                 break
             elif (state == 2):
                 print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传失败,{}秒后重试".format(retrydelay))
@@ -79,15 +78,17 @@ async def uploadIPv6UntilSuccess():  # 记录值与当前值不同时，才会�
 
 
 async def main():
-    global recordedIPv6Address
-    if (UPLOAD_AT_STARTUP == False):
-        recordedIPv6Address = getIPv6Address()  # 开始时记录值与当前值相同，uploadIPv6UntilSuccess()不上传
+    # 获取IPv6地址信息
+    recordedIPv6Address = (socket.getaddrinfo(domain_name, None, socket.AF_INET6))[0][4][0]
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":域名:" + domain_name)
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":目标域名IPv6地址:" + recordedIPv6Address)
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":当前本机IPv6地址:" + getIPv6Address())
     while True:
         if recordedIPv6Address != getIPv6Address():
-            await uploadIPv6UntilSuccess()
+            await uploadIPv6UntilSuccess(recordedIPv6Address)
         else:
             print("\r" + " " * 50 + "\r", end="", flush=True)  # 清空当前行
-            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":IPv6地址未变化:"+recordedIPv6Address, end="\r")
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":IPv6地址未变化:" + recordedIPv6Address, end="\r")
         time.sleep(scandelay)
 
 if __name__ == "__main__":

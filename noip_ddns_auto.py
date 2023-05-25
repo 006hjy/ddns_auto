@@ -78,21 +78,24 @@ async def uploadIPv6UntilSuccess(ipv6address):  # 记录值与当前值不同时
 
 
 async def main():
-    try:
-        # 获取IPv6地址信息
-        recordedIPv6Address = (socket.getaddrinfo(domain_name, None, socket.AF_INET6))[0][4][0]
-        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":域名:" + domain_name)
-        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":目标域名IPv6地址:" + recordedIPv6Address)
-        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":当前本机IPv6地址:" + getIPv6Address())
-        while True:
-            if recordedIPv6Address != getIPv6Address():
-                await uploadIPv6UntilSuccess(recordedIPv6Address)
+    while True:
+        try:
+            # 获取域名绑定的IPv6地址
+            domainIPv6Address = (socket.getaddrinfo(domain_name, None, socket.AF_INET6))[0][4][0]
+            # 获取本机的IPv6地址
+            localIPv6Address = getIPv6Address()
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":域名:" + domain_name)
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":目标域名IPv6地址:" + domainIPv6Address)
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":当前本机IPv6地址:" + localIPv6Address)
+            if domainIPv6Address != localIPv6Address:
+                await uploadIPv6UntilSuccess(localIPv6Address)
             else:
-                print("\r" + " " * 50 + "\r", end="", flush=True)  # 清空当前行
-                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":IPv6地址未变化:" + recordedIPv6Address, end="\r")
-            time.sleep(scandelay)
-    except:
-        input("网络好像没连上~")
+                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":IPv6地址未变化")
+        except:
+            print("网络好像没连上~")
+        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":{}秒后进行下一次扫描".format(scandelay))
+        time.sleep(scandelay)
+        os.system('cls')
 
 if __name__ == "__main__":
     asyncio.run(main())

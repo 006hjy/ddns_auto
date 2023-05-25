@@ -61,7 +61,7 @@ async def uploadIPv6UntilSuccess(ipv6address):  # 记录值与当前值不同时
             print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传成功")
             break
         elif (state == 1):
-            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":重复上传!与域名记录的地址相同")
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传成功!与已记录的地址相同,没有发生变化")
             break
         elif (state == 2):
             print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传失败,{}秒后重试".format(retrydelay))

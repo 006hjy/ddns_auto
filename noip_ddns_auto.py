@@ -54,27 +54,20 @@ async def uploadIPv6Address(ipv6address):
 
 
 async def uploadIPv6UntilSuccess(ipv6address):  # 记录值与当前值不同时，才会上传，直到上传成功。
-    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "正在上传本机IPv6地址", end="\r")
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "正在上传本机IPv6地址")
     while True:
-        currentIPv6Address = getIPv6Address()
-        if (ipv6address != currentIPv6Address):
-            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":当前IPv6:" + currentIPv6Address)
-            state = await uploadIPv6Address(currentIPv6Address)
-            if (state == 0):
-                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传成功")
-                ipv6address = currentIPv6Address
-                break
-            elif (state == 1):
-                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":重复上传!IP地址与上次相同")
-                ipv6address = currentIPv6Address
-                break
-            elif (state == 2):
-                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传失败,{}秒后重试".format(retrydelay))
-            elif (state == 3):
-                print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":网络连接失败,{}秒后重试".format(retrydelay))
-            time.sleep(retrydelay)
-        else:
+        state = await uploadIPv6Address(ipv6address)
+        if (state == 0):
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传成功")
             break
+        elif (state == 1):
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":重复上传!与域名记录的地址相同")
+            break
+        elif (state == 2):
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":上传失败,{}秒后重试".format(retrydelay))
+        elif (state == 3):
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S")+":网络连接失败,{}秒后重试".format(retrydelay))
+        time.sleep(retrydelay)
 
 
 async def main():

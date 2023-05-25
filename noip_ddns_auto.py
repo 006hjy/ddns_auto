@@ -92,7 +92,7 @@ async def main():
             else:
                 print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":IPv6地址未变化")
         except:
-            print("网络好像没连上~")
+            print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":网络好像没连上~")
         print(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ":{}秒后进行下一次扫描".format(scandelay))
         time.sleep(scandelay)
         os.system('cls')

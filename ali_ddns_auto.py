@@ -6,6 +6,7 @@
 # https://help.aliyun.com/document_detail/2355673.html
 # SDK 安装命令:
 # pip install alibabacloud_alidns20150109==3.0.7
+# pip install alibabacloud_tea_console
 ###############################
 import os
 import sys

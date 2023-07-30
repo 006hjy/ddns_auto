@@ -93,6 +93,7 @@ async def main():
 
 async def Listen():
     while True:
+        os.system('Ipconfig/flushdns')
         os.system('cls')
         try:
             # 获取域名绑定的IPv6地址

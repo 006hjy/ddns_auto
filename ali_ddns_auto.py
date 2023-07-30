@@ -4,6 +4,8 @@
 # 说明:本脚本仅适用于Windows系统
 # 具体API请参考:
 # https://help.aliyun.com/document_detail/2355673.html
+# SDK 安装命令:
+# pip install alibabacloud_alidns20150109==3.0.7
 ###############################
 import os
 import sys
